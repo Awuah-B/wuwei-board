@@ -11,4 +11,32 @@
   <div class="muted">Posted {{ thread.created_at[:10] }}</div>
   <div class="post-body">{{ thread.body }}</div>
 </div>
+
+<h2>Comments ({{ posts|length }})</h2>
+
+{% for post in posts %}
+  <div class="post" id="p{{ post.id }}">
+    <div class="post-head">
+      <span class="post-name">{{ post.name }}</span>
+      <span class="muted">{{ post.created_at[:16] }} UTC</span>
+      <span class="muted">No.{{ post.id }}</span>
+    </div>
+    <div class="post-body">{{ post.body }}</div>
+  </div>
+{% else %}
+  <p class="muted">No comments yet.</p>
+{% endfor %}
+
+{% if thread.locked %}
+  <p class="notice">This thread is locked.</p>
+{% elif not thread.comments_enabled %}
+  <p class="notice">Comments are turned off on this board.</p>
+{% else %}
+  <form method="post" action="/thread/{{ thread.id }}/reply" class="reply-form">
+    <h3>Leave a comment</h3>
+    <input type="text" name="name" maxlength="30" placeholder="Name (optional)">
+    <textarea name="body" rows="5" maxlength="2000" placeholder="Your comment" required></textarea>
+    <button type="submit">Post comment</button>
+  </form>
+{% endif %}
 {% endblock %}
