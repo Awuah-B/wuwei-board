@@ -103,3 +103,14 @@ h2 { margin-top: 2rem; }
   font-weight: bold;
   cursor: pointer;
 }
+.flash {
+  background: #2a2a1a;
+  border: 1px solid #5a4a1a;
+  color: #e8b04b;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+.reply-form label { color: #aaa; font-size: 0.9rem; }
+.reply-form button.danger { background: #b94a48; color: #fff; }
+.board .reply-form { margin-top: 0.75rem; }

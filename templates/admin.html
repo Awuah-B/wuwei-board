@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Admin{% endblock %}
+
+{% block content %}
+<h1>Admin</h1>
+
+<form method="post" action="/admin/logout" class="reply-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <button type="submit">Log out</button>
+</form>
+
+<h2>New board</h2>
+<form method="post" action="/admin/boards" class="reply-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <input type="text" name="slug" placeholder="slug (e.g. income)" pattern="[a-z0-9\-]{1,20}" required>
+  <input type="text" name="name" placeholder="Name" maxlength="60" required>
+  <input type="text" name="description" placeholder="Description" maxlength="200">
+  <button type="submit">Create board</button>
+</form>
+
+<h2>Boards</h2>
+{% for b in boards %}
+  <div class="board">
+    <strong>/{{ b.slug }}/</strong> <span class="muted">({{ b.thread_count }} threads)</span>
+
+    <form method="post" action="/admin/boards/{{ b.id }}/edit" class="reply-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <input type="text" name="name" value="{{ b.name }}" maxlength="60" required>
+      <input type="text" name="description" value="{{ b.description }}" maxlength="200">
+      <label><input type="checkbox" name="comments_enabled" {% if b.comments_enabled %}checked{% endif %}> Comments enabled</label>
+      <input type="number" name="sort_order" value="{{ b.sort_order }}">
+      <button type="submit">Save</button>
+    </form>
+
+    <form method="post" action="/admin/boards/{{ b.id }}/delete" class="reply-form">
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      <input type="text" name="confirm" placeholder="Type {{ b.slug }} to confirm delete">
+      <button type="submit" class="danger">Delete board and all its threads</button>
+    </form>
+  </div>
+{% endfor %}
+{% endblock %}
