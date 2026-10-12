@@ -1,14 +1,39 @@
-from flask import Flask, render_template
+import os
+import sqlite3
+
+import click
+
+from flask import Flask, g, render_template
 
 app = Flask(__name__)
+DATABASE = os.path.join(app.root_path, "board.db")
 
-BOARDS = [
-    {"slug": "income", "name": "Income Generation",
-     "description": "Ways I'm trying to earn, and how it's going."},
+def get_db():
+    """Open one database connection per request and reuse it."""
+    if "db" not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+    return g.db
 
-    {"slug": "politics", "name": "Politics",
-     "description": "Political topics I want to talk about."},        ]
+@app.teardown_appcontext
+def close_db(error):
+    """Close the connection when the request ends."""
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+@app.cli.command("init-db")
+def init_db():
+    """Create the tables from schema.sql. """
+    db = get_db()
+    with open(os.path.join(app.root_path, "schema.sql")) as f:
+        db.executescript(f.read())
+    db.commit()
+    click.echo("Database ready.")
 
 @app.route("/")
 def home():
-    return render_template("home.html", boards=BOARDS)
+    boards = get_db().execute(
+        "SELECT * FROM boards ORDER BY sort_order, name"
+            ).fetchall()
+    return render_template("home.html", boards=boards)
