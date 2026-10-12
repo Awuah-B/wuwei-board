@@ -1,0 +1,31 @@
+body {
+  background: #1a1a1a;
+  color: #ddd;
+  font-family: Arial, sans-serif;
+  margin: 0;
+}
+header, main, footer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+header { border-bottom: 1px solid #333; }
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.logo img {
+  height: 40px;
+  width: auto;
+}
+a { color: #6cb4ee; }
+.board {
+  background: #242424;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.board p { margin: 0.25rem 0 0; color: #999; }
+footer { color: #666; font-size: 0.85rem; }

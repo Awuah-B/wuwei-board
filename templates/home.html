@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Boards</h1>
+
+{% for board in boards %}
+  <div class="board">
+    <a href="/b/{{ board.slug }}">/{{ board.slug }}/ - {{ board.name }}</a>
+    <p>{{ board.description }}</p>
+  </div>
+{% endfor %}
+{% endblock %}
