@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}{{ thread.title }}{% endblock %}
+
+{% block content %}
+<p><a href="/b/{{ thread.board_slug }}">&larr; /{{ thread.board_slug }}/ - {{ thread.board_name }}</a></p>
+
+<div class="op">
+  <span class="status">{{ thread.status }}</span>
+  <h1>{{ thread.title }}</h1>
+  <div class="muted">Posted {{ thread.created_at[:10] }}</div>
+  <div class="post-body">{{ thread.body }}</div>
+</div>
+{% endblock %}

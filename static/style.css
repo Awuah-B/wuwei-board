@@ -29,3 +29,39 @@ a { color: #6cb4ee; }
 }
 .board p { margin: 0.25rem 0 0; color: #999; }
 footer { color: #666; font-size: 0.85rem; }
+.muted { color: #888; font-size: 0.9rem; }
+.thread {
+  background: #242424;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.thread-title { font-weight: bold; font-size: 1.05rem; }
+.status {
+  background: #2f4f2f;
+  color: #9fdc9f;
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.8rem;
+  margin-right: 0.4rem;
+}
+.pin {
+  background: #5a4a1a;
+  color: #e8b04b;
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.8rem;
+  margin-right: 0.4rem;
+}
+.op {
+  background: #242424;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 1rem;
+}
+.post-body {
+  white-space: pre-wrap;
+  margin-top: 1rem;
+  overflow-wrap: anywhere;
+}
