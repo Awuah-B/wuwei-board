@@ -1,4 +1,6 @@
 venv/
 *.db
 __pycache__/
-secret key
+secret.key
+static/uploads/
+static/thumbs/

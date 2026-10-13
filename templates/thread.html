@@ -1,42 +1,137 @@
 {% extends "base.html" %}
 
-{% block title %}{{ thread.title }}{% endblock %}
+{% block title %}{{ thread.title }} - /{{ thread.board_slug }}/{% endblock %}
 
 {% block content %}
-<p><a href="/b/{{ thread.board_slug }}">&larr; /{{ thread.board_slug }}/ - {{ thread.board_name }}</a></p>
+<div class="board-title">/{{ thread.board_slug }}/ - {{ thread.board_name }}</div>
+<hr>
 
-<div class="op">
-  <span class="status">{{ thread.status }}</span>
-  <h1>{{ thread.title }}</h1>
-  <div class="muted">Posted {{ thread.created_at[:10] }}</div>
-  <div class="post-body">{{ thread.body }}</div>
+<div class="back-link"><a href="/b/{{ thread.board_slug }}">&larr; Return to /{{ thread.board_slug }}/</a></div>
+
+{# ===== OP Post ===== #}
+<div class="op-post clearfix" id="t{{ thread.id }}">
+  {% if thread.image_filename %}
+  <div class="file-info">
+    File: <a href="{{ url_for('static', filename='uploads/' + thread.image_filename) }}" target="_blank">{{ thread.image_filename }}</a>
+  </div>
+  <a href="{{ url_for('static', filename='uploads/' + thread.image_filename) }}" target="_blank">
+    <img src="{{ url_for('static', filename='thumbs/' + thumb_filename(thread.image_filename)) }}"
+         class="post-thumb" alt="OP image"
+         onclick="event.preventDefault(); this.classList.toggle('expanded');">
+  </a>
+  {% endif %}
+  <div class="post-info">
+    {% if thread.pinned %}<span class="pin-badge">📌 Pinned</span>{% endif %}
+    {% if thread.locked %}<span class="lock-badge">🔒 Locked</span>{% endif %}
+    <span class="status-badge
+      {% if thread.status == 'Active' %}status-active
+      {% elif thread.status == 'In progress' %}status-progress
+      {% elif thread.status == 'Completed' %}status-completed
+      {% elif thread.status == 'Archived' %}status-archived
+      {% endif %}">{{ thread.status }}</span>
+    <span class="post-subject">{{ thread.title }}</span>
+    <span class="post-name">{{ thread.name }}</span>
+    <span class="post-date">{{ thread.created_at[:19] }} UTC</span>
+    <span class="post-num">No.{{ thread.id }}</span>
+    {% if session.get('admin') %}
+      <form method="post" action="/admin/threads/{{ thread.id }}/delete" style="display:inline;">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this entire thread?')">Delete Thread</button>
+      </form>
+    {% endif %}
+  </div>
+  <div class="post-body">{{ thread.body|format_post }}</div>
 </div>
 
-<h2>Comments ({{ posts|length }})</h2>
+<hr>
+
+{# ===== Replies ===== #}
+<div class="comments-header">Replies ({{ posts|length }})</div>
 
 {% for post in posts %}
-  <div class="post" id="p{{ post.id }}">
-    <div class="post-head">
-      <span class="post-name">{{ post.name }}</span>
-      <span class="muted">{{ post.created_at[:16] }} UTC</span>
-      <span class="muted">No.{{ post.id }}</span>
-    </div>
-    <div class="post-body">{{ post.body }}</div>
+<div class="reply-post clearfix" id="p{{ post.id }}">
+  {% if post.image_filename %}
+  <div class="file-info">
+    File: <a href="{{ url_for('static', filename='uploads/' + post.image_filename) }}" target="_blank">{{ post.image_filename }}</a>
   </div>
+  <a href="{{ url_for('static', filename='uploads/' + post.image_filename) }}" target="_blank">
+    <img src="{{ url_for('static', filename='thumbs/' + thumb_filename(post.image_filename)) }}"
+         class="post-thumb" alt="reply image"
+         onclick="event.preventDefault(); this.classList.toggle('expanded');">
+  </a>
+  {% endif %}
+  <div class="post-info">
+    <span class="post-name">{{ post.name }}</span>
+    <span class="post-date">{{ post.created_at[:19] }} UTC</span>
+    <span class="post-num"><a href="#p{{ post.id }}" onclick="insertQuote({{ post.id }})">No.{{ post.id }}</a></span>
+    {% if session.get('admin') %}
+      <form method="post" action="/admin/posts/{{ post.id }}/delete" style="display:inline;">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this post?')">Delete</button>
+      </form>
+    {% endif %}
+  </div>
+  <div class="post-body">{{ post.body|format_post }}</div>
+</div>
 {% else %}
-  <p class="muted">No comments yet.</p>
+  <p class="muted">No replies yet. Be the first!</p>
 {% endfor %}
 
+<hr>
+
+{# ===== Reply form ===== #}
 {% if thread.locked %}
-  <p class="notice">This thread is locked.</p>
+  <p class="notice">🔒 This thread is locked.</p>
 {% elif not thread.comments_enabled %}
   <p class="notice">Comments are turned off on this board.</p>
 {% else %}
-  <form method="post" action="/thread/{{ thread.id }}/reply" class="reply-form">
-    <h3>Leave a comment</h3>
-    <input type="text" name="name" maxlength="30" placeholder="Name (optional)">
-    <textarea name="body" rows="5" maxlength="2000" placeholder="Your comment" required></textarea>
-    <button type="submit">Post comment</button>
-  </form>
+<div style="text-align:center;">
+  <div class="reply-form-container">
+    <form method="post" action="/thread/{{ thread.id }}/reply" enctype="multipart/form-data" class="reply-form">
+      <div class="reply-form-row">
+        <td class="reply-form-label">Name</td>
+        <td class="reply-form-field"><input type="text" name="name" maxlength="30" placeholder="Anonymous"></td>
+      </div>
+      <div class="reply-form-row">
+        <td class="reply-form-label">Comment</td>
+        <td class="reply-form-field"><textarea name="body" id="reply-body" maxlength="2000" placeholder="Your comment..."></textarea></td>
+      </div>
+      <div class="reply-form-row">
+        <td class="reply-form-label">File</td>
+        <td class="reply-form-field"><input type="file" name="file" accept="image/*"></td>
+      </div>
+      <div class="reply-form-submit">
+        <td></td>
+        <td><button type="submit" class="btn">Post Reply</button></td>
+      </div>
+    </form>
+  </div>
+</div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function insertQuote(id) {
+  var ta = document.getElementById('reply-body');
+  if (ta) {
+    ta.value += '>>' + id + '\n';
+    ta.focus();
+  }
+}
+
+// Click thumbnail to expand/collapse
+document.querySelectorAll('.post-thumb').forEach(function(img) {
+  img.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (this.classList.contains('expanded')) {
+      this.classList.remove('expanded');
+      this.src = this.closest('a').querySelector('img').dataset.thumb || this.src;
+    } else {
+      this.classList.add('expanded');
+      this.src = this.closest('a').href;
+    }
+  });
+});
+</script>
 {% endblock %}

@@ -10,9 +10,75 @@ import bcrypt
 import click
 from flask import (Flask, abort, flash, g, redirect, render_template,
                    request, session, url_for)
+from markupsafe import Markup, escape
+from PIL import Image
 
 app = Flask(__name__)
 DATABASE = os.path.join(app.root_path, "board.db")
+
+# ---------- Upload config ----------
+
+UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
+THUMB_FOLDER = os.path.join(app.root_path, "static", "thumbs")
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+MAX_CONTENT_LENGTH = 4 * 1024 * 1024  # 4 MB
+
+app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
+
+
+def ensure_dirs():
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(THUMB_FOLDER, exist_ok=True)
+
+
+ensure_dirs()
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def save_upload(file_storage):
+    """Save an uploaded image and generate a thumbnail. Returns filename or None."""
+    if file_storage is None or file_storage.filename == "":
+        return None
+    if not allowed_file(file_storage.filename):
+        return None
+    ext = file_storage.filename.rsplit(".", 1)[1].lower()
+    fname = secrets.token_hex(8) + "." + ext
+    filepath = os.path.join(UPLOAD_FOLDER, fname)
+    file_storage.save(filepath)
+    # Generate thumbnail
+    try:
+        with Image.open(filepath) as img:
+            img.thumbnail((250, 250))
+            thumb_path = os.path.join(THUMB_FOLDER, fname)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+                thumb_path = os.path.join(THUMB_FOLDER, fname.rsplit(".", 1)[0] + ".jpg")
+                fname_thumb = fname.rsplit(".", 1)[0] + ".jpg"
+            else:
+                fname_thumb = fname
+            img.save(thumb_path)
+    except Exception:
+        # If thumbnail fails, still keep the original
+        pass
+    return fname
+
+
+def delete_upload(filename):
+    """Delete an uploaded file and its thumbnail."""
+    if not filename:
+        return
+    for folder in (UPLOAD_FOLDER, THUMB_FOLDER):
+        path = os.path.join(folder, filename)
+        if os.path.exists(path):
+            os.remove(path)
+    # Also try .jpg thumb variant for converted PNGs
+    base = filename.rsplit(".", 1)[0]
+    jpg_thumb = os.path.join(THUMB_FOLDER, base + ".jpg")
+    if os.path.exists(jpg_thumb):
+        os.remove(jpg_thumb)
 
 
 # ---------- Settings and secret key ----------
@@ -85,6 +151,30 @@ def create_admin(username, password):
     click.echo("Admin saved.")
 
 
+# ---------- Post formatting ----------
+
+def format_post(text):
+    """Format post text with greentext and quotelinks."""
+    text = str(escape(text))
+    # Replace >>number with clickable quotelinks
+    text = re.sub(
+        r'&gt;&gt;(\d+)',
+        r'<a href="#p\1" class="quotelink">&gt;&gt;\1</a>',
+        text,
+    )
+    # Process lines for greentext
+    lines = text.split("\n")
+    result = []
+    for line in lines:
+        if line.startswith("&gt;") and not line.startswith("&gt;&gt;"):
+            line = f'<span class="greentext">{line}</span>'
+        result.append(line)
+    return Markup("<br>".join(result))
+
+
+app.jinja_env.filters["format_post"] = format_post
+
+
 # ---------- Security helpers ----------
 
 def csrf_token():
@@ -115,6 +205,26 @@ def admin_required(view):
     return wrapped
 
 
+# ---------- Jinja helpers ----------
+
+def thumb_filename(filename):
+    """Get the thumbnail filename (may be .jpg for converted PNGs)."""
+    if not filename:
+        return None
+    base, ext = filename.rsplit(".", 1)
+    # Check if thumb exists with original extension
+    if os.path.exists(os.path.join(THUMB_FOLDER, filename)):
+        return filename
+    # Check .jpg variant
+    jpg = base + ".jpg"
+    if os.path.exists(os.path.join(THUMB_FOLDER, jpg)):
+        return jpg
+    return filename
+
+
+app.jinja_env.globals["thumb_filename"] = thumb_filename
+
+
 # ---------- Public pages ----------
 
 @app.route("/")
@@ -134,7 +244,9 @@ def board(slug):
     if board is None:
         abort(404)
     threads = db.execute(
-        "SELECT * FROM threads WHERE board_id = ? "
+        "SELECT threads.*, "
+        "(SELECT COUNT(*) FROM posts WHERE posts.thread_id = threads.id) AS reply_count "
+        "FROM threads WHERE board_id = ? "
         "ORDER BY pinned DESC, last_activity_at DESC",
         (board["id"],),
     ).fetchall()
@@ -176,12 +288,17 @@ def reply(thread_id):
 
     name = request.form.get("name", "").strip()[:30] or "Anonymous"
     body = request.form.get("body", "").strip()
-    if not body or len(body) > 2000:
+    file = request.files.get("file")
+    image_filename = save_upload(file)
+
+    if not body and not image_filename:
+        abort(400)
+    if len(body) > 2000:
         abort(400)
 
     cur = db.execute(
-        "INSERT INTO posts (thread_id, name, body) VALUES (?, ?, ?)",
-        (thread_id, name, body),
+        "INSERT INTO posts (thread_id, name, body, image_filename) VALUES (?, ?, ?, ?)",
+        (thread_id, name, body, image_filename),
     )
     db.execute(
         "UPDATE threads SET last_activity_at = CURRENT_TIMESTAMP WHERE id = ?",
@@ -286,7 +403,131 @@ def delete_board(board_id):
     if request.form.get("confirm", "").strip() != board["slug"]:
         flash("Confirmation did not match. Board not deleted.")
         return redirect(url_for("admin"))
+    # Clean up uploaded images
+    threads = db.execute("SELECT id, image_filename FROM threads WHERE board_id = ?", (board_id,)).fetchall()
+    for t in threads:
+        delete_upload(t["image_filename"])
+        posts = db.execute("SELECT image_filename FROM posts WHERE thread_id = ?", (t["id"],)).fetchall()
+        for p in posts:
+            delete_upload(p["image_filename"])
     db.execute("DELETE FROM boards WHERE id = ?", (board_id,))
     db.commit()
     flash(f"Deleted /{board['slug']}/ and everything in it.")
     return redirect(url_for("admin"))
+
+
+# ---------- Admin: threads ----------
+
+@app.route("/admin/boards/<int:board_id>/threads")
+@admin_required
+def admin_threads(board_id):
+    db = get_db()
+    board = db.execute("SELECT * FROM boards WHERE id = ?", (board_id,)).fetchone()
+    if board is None:
+        abort(404)
+    threads = db.execute(
+        "SELECT threads.*, "
+        "(SELECT COUNT(*) FROM posts WHERE posts.thread_id = threads.id) AS reply_count "
+        "FROM threads WHERE board_id = ? "
+        "ORDER BY pinned DESC, last_activity_at DESC",
+        (board_id,),
+    ).fetchall()
+    return render_template("admin_threads.html", board=board, threads=threads)
+
+
+@app.route("/admin/threads", methods=["POST"])
+@admin_required
+def create_thread():
+    board_id = request.form.get("board_id", type=int)
+    if not board_id:
+        abort(400)
+    db = get_db()
+    board = db.execute("SELECT * FROM boards WHERE id = ?", (board_id,)).fetchone()
+    if board is None:
+        abort(404)
+
+    title = request.form.get("title", "").strip()[:100]
+    name = request.form.get("name", "").strip()[:30] or "Anonymous"
+    body = request.form.get("body", "").strip()[:5000]
+    status = request.form.get("status", "Active").strip()
+    if status not in ("Active", "In progress", "Completed", "Archived"):
+        status = "Active"
+
+    file = request.files.get("file")
+    image_filename = save_upload(file)
+
+    if not title or not body:
+        flash("Title and body are required.")
+        return redirect(url_for("admin_threads", board_id=board_id))
+
+    db.execute(
+        "INSERT INTO threads (board_id, title, name, body, image_filename, status) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (board_id, title, name, body, image_filename, status),
+    )
+    db.commit()
+    flash(f"Thread \"{title}\" created.")
+    return redirect(url_for("admin_threads", board_id=board_id))
+
+
+@app.route("/admin/threads/<int:thread_id>/edit", methods=["POST"])
+@admin_required
+def edit_thread(thread_id):
+    db = get_db()
+    thread = db.execute("SELECT * FROM threads WHERE id = ?", (thread_id,)).fetchone()
+    if thread is None:
+        abort(404)
+
+    title = request.form.get("title", "").strip()[:100]
+    body = request.form.get("body", "").strip()[:5000]
+    status = request.form.get("status", "Active").strip()
+    if status not in ("Active", "In progress", "Completed", "Archived"):
+        status = "Active"
+    pinned = 1 if request.form.get("pinned") else 0
+    locked = 1 if request.form.get("locked") else 0
+
+    if not title:
+        flash("Title is required.")
+        return redirect(url_for("admin_threads", board_id=thread["board_id"]))
+
+    db.execute(
+        "UPDATE threads SET title = ?, body = ?, status = ?, pinned = ?, locked = ? "
+        "WHERE id = ?",
+        (title, body, status, pinned, locked, thread_id),
+    )
+    db.commit()
+    flash("Thread updated.")
+    return redirect(url_for("admin_threads", board_id=thread["board_id"]))
+
+
+@app.route("/admin/threads/<int:thread_id>/delete", methods=["POST"])
+@admin_required
+def delete_thread(thread_id):
+    db = get_db()
+    thread = db.execute("SELECT * FROM threads WHERE id = ?", (thread_id,)).fetchone()
+    if thread is None:
+        abort(404)
+    # Clean up images
+    delete_upload(thread["image_filename"])
+    posts = db.execute("SELECT image_filename FROM posts WHERE thread_id = ?", (thread_id,)).fetchall()
+    for p in posts:
+        delete_upload(p["image_filename"])
+    db.execute("DELETE FROM threads WHERE id = ?", (thread_id,))
+    db.commit()
+    flash("Thread deleted.")
+    return redirect(url_for("admin_threads", board_id=thread["board_id"]))
+
+
+@app.route("/admin/posts/<int:post_id>/delete", methods=["POST"])
+@admin_required
+def delete_post(post_id):
+    db = get_db()
+    post = db.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
+    if post is None:
+        abort(404)
+    delete_upload(post["image_filename"])
+    thread_id = post["thread_id"]
+    db.execute("DELETE FROM posts WHERE id = ?", (post_id,))
+    db.commit()
+    flash("Post deleted.")
+    return redirect(url_for("thread", thread_id=thread_id))

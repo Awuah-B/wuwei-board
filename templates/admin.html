@@ -1,43 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}Admin{% endblock %}
+{% block title %}Admin Panel{% endblock %}
 
 {% block content %}
-<h1>Admin</h1>
+<div class="board-title">Admin Panel</div>
+<hr>
 
-<form method="post" action="/admin/logout" class="reply-form">
-  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-  <button type="submit">Log out</button>
-</form>
+<div style="text-align:center; margin-bottom:15px;">
+  <form method="post" action="/admin/logout" style="display:inline;">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <button type="submit" class="btn">Log Out</button>
+  </form>
+</div>
 
-<h2>New board</h2>
-<form method="post" action="/admin/boards" class="reply-form">
-  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-  <input type="text" name="slug" placeholder="slug (e.g. income)" pattern="[a-z0-9\-]{1,20}" required>
-  <input type="text" name="name" placeholder="Name" maxlength="60" required>
-  <input type="text" name="description" placeholder="Description" maxlength="200">
-  <button type="submit">Create board</button>
-</form>
+{# ===== Create Board ===== #}
+<div class="admin-section">
+  <h3>Create New Board</h3>
+  <form method="post" action="/admin/boards" class="admin-form">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <input type="text" name="slug" placeholder="slug (e.g. tech)" pattern="[a-z0-9\-]{1,20}" required size="15">
+      <input type="text" name="name" placeholder="Board Name" maxlength="60" required size="25">
+      <input type="text" name="description" placeholder="Description (optional)" maxlength="200" size="35">
+      <button type="submit" class="btn">Create Board</button>
+    </div>
+  </form>
+</div>
 
-<h2>Boards</h2>
-{% for b in boards %}
-  <div class="board">
-    <strong>/{{ b.slug }}/</strong> <span class="muted">({{ b.thread_count }} threads)</span>
+{# ===== Existing Boards ===== #}
+<div class="admin-section">
+  <h3>Manage Boards</h3>
+  {% for b in boards %}
+  <div class="admin-board-item">
+    <strong>/{{ b.slug }}/</strong> — {{ b.name }}
+    <span class="muted">({{ b.thread_count }} thread{{ 's' if b.thread_count != 1 }})</span>
+    <a href="/admin/boards/{{ b.id }}/threads">[Manage Threads]</a>
+    <a href="/b/{{ b.slug }}">[View Board]</a>
 
-    <form method="post" action="/admin/boards/{{ b.id }}/edit" class="reply-form">
+    <form method="post" action="/admin/boards/{{ b.id }}/edit" class="admin-form">
       <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-      <input type="text" name="name" value="{{ b.name }}" maxlength="60" required>
-      <input type="text" name="description" value="{{ b.description }}" maxlength="200">
-      <label><input type="checkbox" name="comments_enabled" {% if b.comments_enabled %}checked{% endif %}> Comments enabled</label>
-      <input type="number" name="sort_order" value="{{ b.sort_order }}">
-      <button type="submit">Save</button>
+      <div class="form-row">
+        <input type="text" name="name" value="{{ b.name }}" maxlength="60" required size="20">
+        <input type="text" name="description" value="{{ b.description }}" maxlength="200" size="30">
+        <label><input type="checkbox" name="comments_enabled" {% if b.comments_enabled %}checked{% endif %}> Comments</label>
+        <label>Order: <input type="number" name="sort_order" value="{{ b.sort_order }}" size="3" style="width:50px;"></label>
+        <button type="submit" class="btn btn-sm">Save</button>
+      </div>
     </form>
 
-    <form method="post" action="/admin/boards/{{ b.id }}/delete" class="reply-form">
+    <form method="post" action="/admin/boards/{{ b.id }}/delete" class="admin-form">
       <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-      <input type="text" name="confirm" placeholder="Type {{ b.slug }} to confirm delete">
-      <button type="submit" class="danger">Delete board and all its threads</button>
+      <div class="form-row">
+        <input type="text" name="confirm" placeholder="Type '{{ b.slug }}' to delete" size="20">
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete /{{ b.slug }}/ and ALL its threads?')">Delete Board</button>
+      </div>
     </form>
   </div>
-{% endfor %}
+  {% else %}
+    <p class="muted">No boards yet. Create one above.</p>
+  {% endfor %}
+</div>
 {% endblock %}

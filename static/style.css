@@ -1,116 +1,530 @@
+/* ===== wuwei-board — Yotsuba Theme ===== */
+
+:root {
+  --bg: #FFFFEE;
+  --bg-highlight: #F0C0B0;
+  --post-op: #F0E0D6;
+  --post-op-border: #D9BFB7;
+  --post-reply: #D6DAF0;
+  --post-reply-border: #B7C5D9;
+  --title-color: #800000;
+  --name-color: #117743;
+  --link-color: #34345C;
+  --greentext: #789922;
+  --quotelink: #DD0000;
+  --subject-color: #0F0C5D;
+  --text-color: #000;
+  --muted-color: #707070;
+  --navbar-bg: #800000;
+  --navbar-text: #FFD6D6;
+  --flash-bg: #FFF3CD;
+  --flash-border: #FFEEBA;
+  --flash-text: #856404;
+  --btn-bg: #F0E0D6;
+  --btn-border: #C0A89C;
+  --danger-bg: #CC1105;
+  --danger-text: #fff;
+}
+
+* { box-sizing: border-box; }
+
 body {
-  background: #1a1a1a;
-  color: #ddd;
-  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-color);
+  font-family: arial, helvetica, sans-serif;
+  font-size: 10pt;
   margin: 0;
+  padding: 0;
 }
-header, main, footer {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
+
+a { color: var(--link-color); text-decoration: none; }
+a:hover { text-decoration: underline; color: var(--quotelink); }
+
+/* ===== Navbar ===== */
+
+.navbar {
+  background: var(--navbar-bg);
+  color: var(--navbar-text);
+  padding: 4px 8px;
+  font-size: 9pt;
+  text-align: center;
 }
-header { border-bottom: 1px solid #333; }
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+.navbar a {
+  color: var(--navbar-text);
+  font-weight: bold;
 }
-.logo img {
-  height: 40px;
+.navbar a:hover { color: #fff; }
+.navbar .nav-boards { margin-right: 10px; }
+.navbar .nav-sep { margin: 0 2px; color: #D9A8A8; }
+
+/* ===== Banner ===== */
+
+.banner {
+  text-align: center;
+  padding: 10px 0 5px;
+}
+.banner img {
+  max-height: 100px;
   width: auto;
 }
-a { color: #6cb4ee; }
-.board {
-  background: #242424;
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.75rem;
-}
-.board p { margin: 0.25rem 0 0; color: #999; }
-footer { color: #666; font-size: 0.85rem; }
-.muted { color: #888; font-size: 0.9rem; }
-.thread {
-  background: #242424;
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.75rem;
-}
-.thread-title { font-weight: bold; font-size: 1.05rem; }
-.status {
-  background: #2f4f2f;
-  color: #9fdc9f;
-  border-radius: 3px;
-  padding: 0.1rem 0.4rem;
-  font-size: 0.8rem;
-  margin-right: 0.4rem;
-}
-.pin {
-  background: #5a4a1a;
-  color: #e8b04b;
-  border-radius: 3px;
-  padding: 0.1rem 0.4rem;
-  font-size: 0.8rem;
-  margin-right: 0.4rem;
-}
-.op {
-  background: #242424;
-  border: 1px solid #333;
-  border-radius: 4px;
-  padding: 1rem;
-}
-.post-body {
-  white-space: pre-wrap;
-  margin-top: 1rem;
-  overflow-wrap: anywhere;
-}
-h2 { margin-top: 2rem; }
-.post {
-  background: #202020;
-  border: 1px solid #333;
-  border-left: 3px solid #e8b04b;
-  border-radius: 4px;
-  padding: 0.6rem 1rem;
-  margin-bottom: 0.75rem;
-}
-.post:target { background: #2c2a1c; }
-.post-head { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
-.post-name { color: #7fc27f; font-weight: bold; }
-.notice { color: #e8b04b; }
-.reply-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-.reply-form input, .reply-form textarea {
-  background: #1f1f1f;
-  color: #ddd;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 0.5rem;
-  font-family: inherit;
-  font-size: 1rem;
-}
-.reply-form button {
-  align-self: flex-start;
-  background: #e8b04b;
-  color: #1a1a1a;
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
+
+/* ===== Board header ===== */
+
+.board-title {
+  text-align: center;
+  color: var(--title-color);
+  font-family: 'Tahoma', sans-serif;
+  font-size: 28px;
   font-weight: bold;
-  cursor: pointer;
+  letter-spacing: -1px;
+  margin: 5px 0 0;
 }
+.board-subtitle {
+  text-align: center;
+  color: var(--muted-color);
+  font-size: 9pt;
+  margin: 0 0 10px;
+  font-style: italic;
+}
+
+/* ===== Content area ===== */
+
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 10px 40px;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #B7A69A;
+  margin: 10px 0;
+}
+
+/* ===== Flash messages ===== */
+
 .flash {
-  background: #2a2a1a;
-  border: 1px solid #5a4a1a;
-  color: #e8b04b;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  margin-bottom: 1rem;
+  background: var(--flash-bg);
+  border: 1px solid var(--flash-border);
+  color: var(--flash-text);
+  padding: 8px 12px;
+  margin: 10px auto;
+  max-width: 600px;
+  text-align: center;
+  font-size: 10pt;
 }
-.reply-form label { color: #aaa; font-size: 0.9rem; }
-.reply-form button.danger { background: #b94a48; color: #fff; }
-.board .reply-form { margin-top: 0.75rem; }
+
+/* ===== Board list (home page) ===== */
+
+.board-list {
+  max-width: 600px;
+  margin: 20px auto;
+  text-align: center;
+}
+.board-list h2 {
+  color: var(--title-color);
+  font-size: 16pt;
+  margin-bottom: 10px;
+}
+.board-list-item {
+  padding: 6px 0;
+  border-bottom: 1px solid #D9BFB7;
+}
+.board-list-item:last-child { border-bottom: none; }
+.board-list-item a {
+  font-weight: bold;
+  font-size: 11pt;
+}
+.board-list-item .board-desc {
+  color: var(--muted-color);
+  font-size: 9pt;
+  margin-left: 8px;
+}
+
+/* ===== Thread on board page (catalog-ish / classic) ===== */
+
+.thread-container {
+  margin-bottom: 4px;
+}
+
+/* ===== Post structure ===== */
+
+.op-post {
+  background: var(--post-op);
+  border: 1px solid var(--post-op-border);
+  display: table;
+  margin: 8px 0;
+  padding: 4px 8px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.reply-post {
+  background: var(--post-reply);
+  border: 1px solid var(--post-reply-border);
+  display: table;
+  margin: 4px 0 4px 20px;
+  padding: 4px 8px;
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+}
+
+.reply-post:target,
+.op-post:target {
+  background: var(--bg-highlight) !important;
+}
+
+/* ===== Post info line ===== */
+
+.post-info {
+  font-size: 10pt;
+  margin: 2px 0 4px;
+}
+.post-subject {
+  color: var(--subject-color);
+  font-weight: bold;
+  font-size: 11pt;
+}
+.post-name {
+  color: var(--name-color);
+  font-weight: bold;
+}
+.post-date {
+  color: var(--muted-color);
+  font-size: 9pt;
+}
+.post-num a {
+  color: var(--text-color);
+  text-decoration: none;
+}
+.post-num a:hover {
+  color: var(--quotelink);
+}
+
+/* ===== File info ===== */
+
+.file-info {
+  font-size: 8pt;
+  color: var(--muted-color);
+  margin: 4px 0;
+}
+
+/* ===== Post image ===== */
+
+.post-thumb {
+  float: left;
+  margin: 4px 12px 4px 4px;
+  cursor: pointer;
+  max-width: 150px;
+  max-height: 150px;
+  border: none;
+}
+.post-thumb:hover {
+  opacity: 0.85;
+}
+.post-thumb.expanded {
+  max-width: none;
+  max-height: none;
+}
+
+/* ===== Post body ===== */
+
+.post-body {
+  margin: 6px 0 4px;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+/* ===== Greentext & quotelinks ===== */
+
+.greentext { color: var(--greentext); }
+
+.quotelink {
+  color: var(--quotelink);
+  font-weight: normal;
+}
+.quotelink:hover {
+  color: #FF0000;
+}
+
+/* ===== Status & pin badges ===== */
+
+.status-badge {
+  font-size: 8pt;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: bold;
+  margin-right: 4px;
+}
+.status-active { background: #C5E1A5; color: #33691E; }
+.status-progress { background: #FFF9C4; color: #F57F17; }
+.status-completed { background: #B3E5FC; color: #01579B; }
+.status-archived { background: #D7CCC8; color: #4E342E; }
+
+.pin-badge {
+  font-size: 8pt;
+  color: #E65100;
+  font-weight: bold;
+  margin-right: 4px;
+}
+.lock-badge {
+  font-size: 8pt;
+  color: #BF360C;
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+/* ===== Thread stats on board page ===== */
+
+.thread-stats {
+  font-size: 9pt;
+  color: var(--muted-color);
+  margin-left: 6px;
+}
+
+/* ===== Thread summary on board page ===== */
+
+.thread-body-preview {
+  margin: 4px 0;
+  color: #333;
+  line-height: 1.3;
+}
+
+/* ===== Reply form ===== */
+
+.reply-box {
+  text-align: center;
+  margin: 10px 0;
+}
+.reply-box-toggle {
+  color: var(--link-color);
+  cursor: pointer;
+  font-size: 10pt;
+  text-decoration: underline;
+}
+.reply-box-toggle:hover { color: var(--quotelink); }
+
+.reply-form-container {
+  background: var(--post-op);
+  border: 1px solid var(--post-op-border);
+  display: inline-block;
+  padding: 8px;
+  margin: 10px auto;
+  text-align: left;
+}
+
+.reply-form {
+  display: table;
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+.reply-form-row {
+  display: table-row;
+}
+.reply-form-row td {
+  display: table-cell;
+  padding: 2px;
+  vertical-align: top;
+}
+.reply-form-label {
+  background: #9988AA;
+  color: #fff;
+  font-weight: bold;
+  font-size: 10pt;
+  padding: 4px 8px;
+  text-align: center;
+  min-width: 70px;
+}
+.reply-form-field input[type="text"],
+.reply-form-field input[type="file"],
+.reply-form-field textarea,
+.reply-form-field select {
+  font-family: arial, helvetica, sans-serif;
+  font-size: 10pt;
+  border: 1px solid #AAA;
+  padding: 2px 4px;
+  width: 300px;
+}
+.reply-form-field textarea {
+  width: 400px;
+  height: 120px;
+  resize: vertical;
+}
+.reply-form-field input[type="file"] {
+  border: none;
+  padding: 2px 0;
+}
+
+.reply-form-submit {
+  display: table-row;
+}
+.reply-form-submit td {
+  display: table-cell;
+  padding: 4px 2px;
+}
+
+.btn {
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  color: var(--text-color);
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 10pt;
+  font-weight: bold;
+}
+.btn:hover {
+  background: #E0D0C6;
+}
+.btn-danger {
+  background: var(--danger-bg);
+  border-color: #990000;
+  color: var(--danger-text);
+}
+.btn-danger:hover {
+  background: #AA0000;
+}
+.btn-sm {
+  font-size: 8pt;
+  padding: 2px 8px;
+}
+
+/* ===== Notices ===== */
+
+.notice {
+  text-align: center;
+  color: var(--title-color);
+  font-weight: bold;
+  margin: 10px 0;
+  font-size: 10pt;
+}
+
+.muted {
+  color: var(--muted-color);
+  font-size: 9pt;
+}
+
+/* ===== Back links ===== */
+
+.back-link {
+  margin: 10px 0;
+  font-size: 10pt;
+}
+
+/* ===== Comments header ===== */
+
+.comments-header {
+  color: var(--title-color);
+  font-size: 14pt;
+  margin: 15px 0 5px;
+}
+
+/* ===== Footer ===== */
+
+footer {
+  text-align: center;
+  padding: 10px;
+  font-size: 8pt;
+  color: var(--muted-color);
+  border-top: 1px solid #D9BFB7;
+  margin-top: 20px;
+}
+footer a { color: var(--link-color); }
+
+/* ===== Admin panel ===== */
+
+.admin-section {
+  background: var(--post-op);
+  border: 1px solid var(--post-op-border);
+  padding: 10px;
+  margin: 10px 0;
+}
+.admin-section h3 {
+  color: var(--title-color);
+  margin: 0 0 8px;
+  font-size: 12pt;
+}
+.admin-form {
+  margin: 6px 0;
+}
+.admin-form input[type="text"],
+.admin-form input[type="password"],
+.admin-form input[type="number"],
+.admin-form textarea,
+.admin-form select {
+  font-family: arial, helvetica, sans-serif;
+  font-size: 10pt;
+  border: 1px solid #AAA;
+  padding: 2px 4px;
+  margin: 2px 4px 2px 0;
+}
+.admin-form textarea {
+  width: 100%;
+  height: 80px;
+  resize: vertical;
+}
+.admin-form label {
+  font-size: 9pt;
+  margin-right: 8px;
+}
+.admin-form .form-row {
+  margin: 4px 0;
+}
+
+.admin-board-item {
+  background: var(--post-reply);
+  border: 1px solid var(--post-reply-border);
+  padding: 8px;
+  margin: 6px 0;
+}
+.admin-board-item strong {
+  color: var(--title-color);
+}
+.admin-thread-item {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 8px;
+  margin: 6px 0;
+}
+
+/* ===== Login form ===== */
+
+.login-container {
+  max-width: 300px;
+  margin: 40px auto;
+  text-align: center;
+}
+.login-container h1 {
+  color: var(--title-color);
+  font-size: 16pt;
+}
+.login-form input {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  padding: 6px;
+  font-size: 10pt;
+  border: 1px solid #AAA;
+}
+.login-form .btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* ===== Clearfix ===== */
+
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 600px) {
+  .reply-form-field textarea { width: 260px; }
+  .reply-form-field input[type="text"] { width: 260px; }
+  .reply-post { margin-left: 8px; max-width: calc(100% - 8px); }
+  .board-title { font-size: 22px; }
+  .content { padding: 0 6px 20px; }
+}

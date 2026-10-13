@@ -1,12 +1,19 @@
 {% extends "base.html" %}
 
-{% block content %}
-<h1>Boards</h1>
+{% block title %}wuwei-board{% endblock %}
 
-{% for board in boards %}
-  <div class="board">
-    <a href="/b/{{ board.slug }}">/{{ board.slug }}/ - {{ board.name }}</a>
-    <p>{{ board.description }}</p>
-  </div>
-{% endfor %}
+{% block content %}
+<div class="board-list">
+  <h2>Boards</h2>
+  {% for board in boards %}
+    <div class="board-list-item">
+      <a href="/b/{{ board.slug }}">/{{ board.slug }}/ - {{ board.name }}</a>
+      {% if board.description %}
+        <span class="board-desc">— {{ board.description }}</span>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="muted">No boards yet. <a href="/admin">Create one</a>.</p>
+  {% endfor %}
+</div>
 {% endblock %}
