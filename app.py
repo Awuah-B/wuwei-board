@@ -12,8 +12,10 @@ from flask import (Flask, abort, flash, g, redirect, render_template,
                    request, session, url_for)
 from markupsafe import Markup, escape
 from PIL import Image
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 DATABASE = os.path.join(app.root_path, "board.db")
 
 # ---------- Upload config ----------
