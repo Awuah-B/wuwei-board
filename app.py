@@ -389,7 +389,7 @@ def create_board():
     db = get_db()
     try:
         db.execute(
-            "INSERT INTO boards (slug, name, description) VALUES (?, ?, ?)",
+            "INSERT INTO boards (slug, name, description, quote) VALUES (?, ?, ?, ?)",
             (slug, name, description, quote),
         )
         db.commit()
@@ -414,9 +414,9 @@ def edit_board(board_id):
         return redirect(url_for("admin"))
     db = get_db()
     db.execute(
-        "UPDATE boards SET name = ?, description = ?, comments_enabled = ?, "
+        "UPDATE boards SET name = ?, description = ?, quote = ?, comments_enabled = ?, "
         "sort_order = ? WHERE id = ?",
-        (name, description, comments_enabled, sort_order, board_id),
+        (name, description, quote, comments_enabled, sort_order, board_id),
     )
     db.commit()
     flash("Board saved.")
