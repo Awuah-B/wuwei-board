@@ -1,37 +1,141 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}wuwei-board{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}wuwei-board{% endblock %}</title>
+    <style>
+        /* Base styling for a clean, classic board look */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2ff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #d6daf0;
+            border-bottom: 1px solid #b7c5d9;
+            padding: 10px;
+            text-align: center;
+        }
+        header nav a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #34345c;
+            font-weight: bold;
+        }
+        header nav a:hover {
+            text-decoration: underline;
+        }
+        main {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid #b7c5d9;
+            min-height: 60vh;
+        }
+        .flash-message {
+            background-color: #f0e68c;
+            border: 1px solid #d4c85a;
+            color: #333;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: #555;
+            border-top: 1px solid #b7c5d9;
+            margin-top: 30px;
+        }
+        footer a {
+            color: #34345c;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Donation Box Styling */
+        .donation-box {
+            margin-top: 15px;
+        }
+        .donation-box code {
+            background: #f4f4f4;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.95rem;
+            border: 1px solid #ccc;
+        }
+        .donation-box code:hover {
+            background: #e9e9e9;
+        }
+        #copy-msg {
+            color: green;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <div class="navbar">
-    [<a href="/">Home</a>]
-    {% block nav_boards %}{% endblock %}
-    <span class="nav-sep">|</span>
-    [<a href="/admin">Admin</a>]
-  </div>
+    <header>
+        <nav>
+            <a href="/">[Home]</a>
+            {% block nav_boards %}{% endblock %}
+            |
+            <a href="/admin">[Admin]</a>
+        </nav>
+    </header>
 
-  <div class="banner">
-    <a href="/"><img src="{{ url_for('static', filename='logo.png') }}" alt="wuwei-board"></a>
-  </div>
+    <main>
+        {# Display Flash Messages #}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-  {% for message in get_flashed_messages() %}
-    <div class="flash">{{ message }}</div>
-  {% endfor %}
+        {# Main Page Content #}
+        {% block content %}{% endblock %}
+    </main>
 
-  <div class="content">
-    {% block content %}{% endblock %}
-  </div>
+    <footer>
+        <p>wuwei-board — All posted content is the responsibility of the poster.</p>
+        <p><a href="/admin">Admin Panel</a></p>
+        
+        {# Bitcoin Donation Address #}
+        <div class="donation-box">
+            <p>Support this board with a Bitcoin donation:</p>
+            <code id="btc-address" onclick="copyToClipboard()" title="Click to copy address">
+                bc1qg8m4slzxzafqvxwvuq3n42u7wrzdwpctpz4za0
+            </code>
+            <p id="copy-msg">Address copied to clipboard!</p>
+        </div>
+    </footer>
 
-  <footer>
-    wuwei-board &mdash; All posted content is the responsibility of the poster.
-    <br><a href="/admin">Admin Panel</a>
-  </footer>
+    <script>
+        function copyToClipboard() {
+            const address = "bc1qg8m4slzxzafqvxwvuq3n42u7wrzdwpctpz4za0";
+            navigator.clipboard.writeText(address).then(() => {
+                const msg = document.getElementById("copy-msg");
+                msg.style.display = "block";
+                setTimeout(() => { msg.style.display = "none"; }, 2000);
+            }).catch(err => {
+                console.error("Failed to copy: ", err);
+            });
+        }
+    </script>
 
-  {% block scripts %}{% endblock %}
+    {# Page-specific scripts #}
+    {% block scripts %}{% endblock %}
 </body>
 </html>
