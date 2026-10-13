@@ -28,6 +28,10 @@
     <label>Description: 
         <input type="text" name="description" maxlength="200">
     </label><br><br>
+
+    <label>Quote (optional):
+    <input type="text" name="quote" maxlength="200" placeholder="A short, iconic quote for this board">
+    </label><br><br>
     
     <button type="submit">Create Board</button>
 </form>
@@ -57,7 +61,9 @@
         <label>Description: 
             <input type="text" name="description" value="{{ b.description }}" maxlength="200">
         </label><br><br>
-        
+        <label>Quote: 
+    <input type="text" name="quote" value="{{ b.quote }}" maxlength="200" style="width: 100%; max-width: 400px;">
+    </label><br><br>
         <label>
             <input type="checkbox" name="comments_enabled" {% if b.comments_enabled %}checked{% endif %}> 
             Comments Enabled

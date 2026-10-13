@@ -528,3 +528,12 @@ footer a { color: var(--link-color); }
   .board-title { font-size: 22px; }
   .content { padding: 0 6px 20px; }
 }
+/* ===== Board Quote ===== */
+.board-quote {
+    text-align: center;
+    color: var(--muted-color);
+    font-size: 10pt;
+    font-style: italic;
+    margin: 5px auto 15px;
+    max-width: 600px;
+}

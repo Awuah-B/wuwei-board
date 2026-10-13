@@ -3,47 +3,66 @@
 {% block title %}/{{ board.slug }}/ - {{ board.name }}{% endblock %}
 
 {% block content %}
+
+{# ===== Board Header ===== #}
 <div class="board-title">/{{ board.slug }}/ - {{ board.name }}</div>
 <div class="board-subtitle">{{ board.description }}</div>
+
+{% if board.quote %}
+    <div class="board-quote">"{{ board.quote }}"</div>
+{% endif %}
+
+<div class="back-link">[<a href="/">← All boards</a>]</div>
+
 <hr>
 
-<div class="back-link"><a href="/">&larr; All boards</a></div>
-
+{# ===== Thread List ===== #}
 {% for thread in threads %}
-<div class="thread-container" id="t{{ thread.id }}">
-  <div class="op-post clearfix">
-    {% if thread.image_filename %}
-    <div class="file-info">
-      File: <a href="{{ url_for('static', filename='uploads/' + thread.image_filename) }}" target="_blank">{{ thread.image_filename }}</a>
+<div class="thread-container">
+    <div class="op-post">
+        
+        {# Image & File Info #}
+        {% if thread.image_filename %}
+        <div class="file-info">
+            File: <a href="{{ url_for('static', filename='uploads/' + thread.image_filename) }}" target="_blank">{{ thread.image_filename }}</a>
+        </div>
+        <a href="{{ url_for('static', filename='uploads/' + thread.image_filename) }}" target="_blank">
+            <img src="{{ url_for('static', filename='thumbs/' + thumb_filename(thread.image_filename)) }}" class="post-thumb" alt="thumbnail">
+        </a>
+        {% endif %}
+
+        {# Post Info Line #}
+        <div class="post-info">
+            {% if thread.pinned %}<span class="pin-badge">📌 Pinned</span>{% endif %}
+            {% if thread.locked %}<span class="lock-badge">🔒 Locked</span>{% endif %}
+
+            {# Status Badge #}
+            {% set status_class = {
+                'Active': 'status-active',
+                'In progress': 'status-progress',
+                'Completed': 'status-completed',
+                'Archived': 'status-archived'
+            }.get(thread.status, 'status-active') %}
+            <span class="status-badge {{ status_class }}">{{ thread.status }}</span>
+
+            <span class="post-subject">{{ thread.title }}</span>
+            <span class="post-name">{{ thread.name }}</span>
+            <span class="post-date">{{ thread.created_at[:19] }}</span>
+            <span class="post-num"><a href="/thread/{{ thread.id }}">No.{{ thread.id }}</a></span>
+            [<a href="/thread/{{ thread.id }}">Reply</a>]
+            <span class="thread-stats">{{ thread.reply_count }} repl{{ 'y' if thread.reply_count == 1 else 'ies' }}</span>
+        </div>
+
+        {# Body Preview #}
+        <div class="post-body thread-body-preview">
+            {{ thread.body[:300] | format_post }}{% if thread.body|length > 300 %}... [<a href="/thread/{{ thread.id }}">Read more</a>]{% endif %}
+        </div>
+        
+        <div class="clearfix"></div>
     </div>
-    <a href="{{ url_for('static', filename='uploads/' + thread.image_filename) }}" target="_blank">
-      <img src="{{ url_for('static', filename='thumbs/' + thumb_filename(thread.image_filename)) }}" class="post-thumb" alt="thread image">
-    </a>
-    {% endif %}
-    <div class="post-info">
-      {% if thread.pinned %}<span class="pin-badge">📌 Pinned</span>{% endif %}
-      {% if thread.locked %}<span class="lock-badge">🔒 Locked</span>{% endif %}
-      <span class="status-badge
-        {% if thread.status == 'Active' %}status-active
-        {% elif thread.status == 'In progress' %}status-progress
-        {% elif thread.status == 'Completed' %}status-completed
-        {% elif thread.status == 'Archived' %}status-archived
-        {% endif %}">{{ thread.status }}</span>
-      <span class="post-subject">{{ thread.title }}</span>
-      <span class="post-name">{{ thread.name }}</span>
-      <span class="post-date">{{ thread.created_at[:19] }}</span>
-      <span class="post-num"><a href="/thread/{{ thread.id }}">No.{{ thread.id }}</a></span>
-      <span class="thread-stats">[<a href="/thread/{{ thread.id }}">Reply</a>]
-        {{ thread.reply_count }} repl{{ 'y' if thread.reply_count == 1 else 'ies' }}
-      </span>
-    </div>
-    <div class="post-body thread-body-preview">
-      {{ thread.body[:300] }}{% if thread.body|length > 300 %}<span class="muted">... [<a href="/thread/{{ thread.id }}">Read more</a>]</span>{% endif %}
-    </div>
-  </div>
 </div>
-<hr>
 {% else %}
-  <p class="notice">No threads yet.</p>
+<div class="notice">No threads yet.</div>
 {% endfor %}
+
 {% endblock %}

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS boards (
   slug TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
+  quote TEXT DEFAULT '',
   comments_enabled INTEGER NOT NULL DEFAULT 1,
   sort_order INTEGER NOT NULL DEFAULT 0
 );

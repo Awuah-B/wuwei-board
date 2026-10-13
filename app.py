@@ -27,7 +27,7 @@ THUMB_FOLDER = os.path.join(app.root_path, "static", "thumbs")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 MAX_CONTENT_LENGTH = 4 * 1024 * 1024  # 4 MB
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
-
+app.config["DONATION_BTC_ADDRESS"] = "bc1qg8m4slzxzafqvxwvuq3n42u7wrzdwpctpz4za0"
 def ensure_dirs():
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     os.makedirs(THUMB_FOLDER, exist_ok=True)
@@ -382,6 +382,7 @@ def create_board():
     slug = request.form.get("slug", "").strip().lower()
     name = request.form.get("name", "").strip()[:60]
     description = request.form.get("description", "").strip()[:200]
+    quote = request.form.get("quote", "").strip()[:200]
     if not re.fullmatch(r"^[a-z0-9-]{1,20}$", slug) or not name:
         flash("Slug must be 1-20 letters, numbers or dashes, and a name is required.")
         return redirect(url_for("admin"))
@@ -389,7 +390,7 @@ def create_board():
     try:
         db.execute(
             "INSERT INTO boards (slug, name, description) VALUES (?, ?, ?)",
-            (slug, name, description),
+            (slug, name, description, quote),
         )
         db.commit()
         flash(f"Board /{slug}/ created.")
@@ -402,6 +403,7 @@ def create_board():
 def edit_board(board_id):
     name = request.form.get("name", "").strip()[:60]
     description = request.form.get("description", "").strip()[:200]
+    quote = request.form.get("quote", "").strip()[:200]
     comments_enabled = 1 if request.form.get("comments_enabled") else 0
     try:
         sort_order = int(request.form.get("sort_order", "0"))
