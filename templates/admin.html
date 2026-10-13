@@ -3,61 +3,88 @@
 {% block title %}Admin Panel{% endblock %}
 
 {% block content %}
-<div class="board-title">Admin Panel</div>
+<h2>Admin Panel</h2>
+
+<form action="{{ url_for('logout') }}" method="POST" style="display:inline;">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <button type="submit">Log Out</button>
+</form>
+
 <hr>
 
-<div style="text-align:center; margin-bottom:15px;">
-  <form method="post" action="/admin/logout" style="display:inline;">
-    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-    <button type="submit" class="btn">Log Out</button>
-  </form>
-</div>
-
 {# ===== Create Board ===== #}
-<div class="admin-section">
-  <h3>Create New Board</h3>
-  <form method="post" action="/admin/boards" class="admin-form">
+<h3>Create New Board</h3>
+<form action="{{ url_for('create_board') }}" method="POST">
     <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-    <div class="form-row">
-      <input type="text" name="slug" placeholder="slug (e.g. tech)" pattern="[a-z0-9\-]{1,20}" required size="15">
-      <input type="text" name="name" placeholder="Board Name" maxlength="60" required size="25">
-      <input type="text" name="description" placeholder="Description (optional)" maxlength="200" size="35">
-      <button type="submit" class="btn">Create Board</button>
-    </div>
-  </form>
-</div>
+    
+    <label>Slug: 
+        <input type="text" name="slug" required pattern="[a-z0-9\-]{1,20}" title="1-20 lowercase letters, numbers, or dashes">
+    </label><br><br>
+    
+    <label>Name: 
+        <input type="text" name="name" required maxlength="60">
+    </label><br><br>
+    
+    <label>Description: 
+        <input type="text" name="description" maxlength="200">
+    </label><br><br>
+    
+    <button type="submit">Create Board</button>
+</form>
+
+<hr>
 
 {# ===== Existing Boards ===== #}
-<div class="admin-section">
-  <h3>Manage Boards</h3>
-  {% for b in boards %}
-  <div class="admin-board-item">
-    <strong>/{{ b.slug }}/</strong> — {{ b.name }}
-    <span class="muted">({{ b.thread_count }} thread{{ 's' if b.thread_count != 1 }})</span>
-    <a href="/admin/boards/{{ b.id }}/threads">[Manage Threads]</a>
-    <a href="/b/{{ b.slug }}">[View Board]</a>
+<h3>Manage Boards</h3>
+{% for b in boards %}
+<div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+    <h4>/{{ b.slug }}/ — {{ b.name }} ({{ b.thread_count }} thread{{ 's' if b.thread_count != 1 else '' }})</h4>
+    <p>{{ b.description }}</p>
+    
+    <a href="{{ url_for('admin_threads', board_id=b.id) }}">Manage Threads</a> | 
+    <a href="{{ url_for('board', slug=b.slug) }}">View Board</a>
 
-    <form method="post" action="/admin/boards/{{ b.id }}/edit" class="admin-form">
-      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-      <div class="form-row">
-        <input type="text" name="name" value="{{ b.name }}" maxlength="60" required size="20">
-        <input type="text" name="description" value="{{ b.description }}" maxlength="200" size="30">
-        <label><input type="checkbox" name="comments_enabled" {% if b.comments_enabled %}checked{% endif %}> Comments</label>
-        <label>Order: <input type="number" name="sort_order" value="{{ b.sort_order }}" size="3" style="width:50px;"></label>
-        <button type="submit" class="btn btn-sm">Save</button>
-      </div>
+    <hr>
+    
+    <h4>Edit Board</h4>
+    <form action="{{ url_for('edit_board', board_id=b.id) }}" method="POST">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        
+        <label>Name: 
+            <input type="text" name="name" value="{{ b.name }}" required maxlength="60">
+        </label><br><br>
+        
+        <label>Description: 
+            <input type="text" name="description" value="{{ b.description }}" maxlength="200">
+        </label><br><br>
+        
+        <label>
+            <input type="checkbox" name="comments_enabled" {% if b.comments_enabled %}checked{% endif %}> 
+            Comments Enabled
+        </label><br><br>
+        
+        <label>Sort Order: 
+            <input type="number" name="sort_order" value="{{ b.sort_order }}">
+        </label><br><br>
+        
+        <button type="submit">Save Changes</button>
     </form>
 
-    <form method="post" action="/admin/boards/{{ b.id }}/delete" class="admin-form">
-      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-      <div class="form-row">
-        <input type="text" name="confirm" placeholder="Type '{{ b.slug }}' to delete" size="20">
-        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete /{{ b.slug }}/ and ALL its threads?')">Delete Board</button>
-      </div>
+    <hr>
+    
+    <h4>Delete Board</h4>
+    <form action="{{ url_for('delete_board', board_id=b.id) }}" method="POST" onsubmit="return confirm('Are you sure? This will permanently delete the board and ALL its threads and posts.');">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        
+        <label>Type the board slug "<strong>{{ b.slug }}</strong>" to confirm deletion: 
+            <input type="text" name="confirm" required autocomplete="off">
+        </label><br><br>
+        
+        <button type="submit" style="color: red; font-weight: bold;">Delete Board</button>
     </form>
-  </div>
-  {% else %}
-    <p class="muted">No boards yet. Create one above.</p>
-  {% endfor %}
 </div>
+{% else %}
+<p>No boards yet. Create one above.</p>
+{% endfor %}
+
 {% endblock %}

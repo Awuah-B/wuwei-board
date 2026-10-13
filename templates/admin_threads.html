@@ -3,97 +3,105 @@
 {% block title %}Admin — /{{ board.slug }}/ Threads{% endblock %}
 
 {% block content %}
-<div class="board-title">Manage Threads: /{{ board.slug }}/ - {{ board.name }}</div>
+<h2>Manage Threads: /{{ board.slug }}/ - {{ board.name }}</h2>
+
+<a href="{{ url_for('admin') }}">← Back to Admin</a> | 
+<a href="{{ url_for('board', slug=board.slug) }}">View Board</a>
+
 <hr>
 
-<div class="back-link"><a href="/admin">&larr; Back to Admin</a> | <a href="/b/{{ board.slug }}">View Board</a></div>
-
 {# ===== Create Thread ===== #}
-<div class="admin-section">
-  <h3>Create New Thread</h3>
-  <form method="post" action="/admin/threads" enctype="multipart/form-data" class="admin-form">
+<h3>Create New Thread</h3>
+<form action="{{ url_for('create_thread') }}" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="csrf" value="{{ csrf_token() }}">
     <input type="hidden" name="board_id" value="{{ board.id }}">
-    <div class="form-row">
-      <label>Title: <input type="text" name="title" maxlength="100" required size="40"></label>
-    </div>
-    <div class="form-row">
-      <label>Name: <input type="text" name="name" maxlength="30" placeholder="Anonymous" size="20"></label>
-      <label>Status:
+    
+    <label>Title: 
+        <input type="text" name="title" required maxlength="100" style="width: 100%; max-width: 400px;">
+    </label><br><br>
+    
+    <label>Name: 
+        <input type="text" name="name" maxlength="30" placeholder="Anonymous">
+    </label><br><br>
+    
+    <label>Status: 
         <select name="status">
-          <option value="Active">Active</option>
-          <option value="In progress">In progress</option>
-          <option value="Completed">Completed</option>
-          <option value="Archived">Archived</option>
+            <option value="Active">Active</option>
+            <option value="In progress">In progress</option>
+            <option value="Completed">Completed</option>
+            <option value="Archived">Archived</option>
         </select>
-      </label>
-    </div>
-    <div class="form-row">
-      <textarea name="body" placeholder="Thread body..." maxlength="5000" required></textarea>
-    </div>
-    <div class="form-row">
-      <label>Image (optional): <input type="file" name="file" accept="image/*"></label>
-    </div>
-    <div class="form-row">
-      <button type="submit" class="btn">Create Thread</button>
-    </div>
-  </form>
-</div>
+    </label><br><br>
+    
+    <label>Body: <br>
+        <textarea name="body" rows="6" cols="60" required maxlength="5000" style="width: 100%; max-width: 600px;"></textarea>
+    </label><br><br>
+    
+    <label>Image (optional): 
+        <input type="file" name="file" accept="image/png, image/jpeg, image/gif, image/webp">
+    </label><br><br>
+    
+    <button type="submit">Create Thread</button>
+</form>
+
+<hr>
 
 {# ===== Existing Threads ===== #}
-<div class="admin-section">
-  <h3>Threads ({{ threads|length }})</h3>
-  {% for t in threads %}
-  <div class="admin-thread-item">
-    <div>
-      {% if t.pinned %}<span class="pin-badge">📌</span>{% endif %}
-      {% if t.locked %}<span class="lock-badge">🔒</span>{% endif %}
-      <span class="status-badge
-        {% if t.status == 'Active' %}status-active
-        {% elif t.status == 'In progress' %}status-progress
-        {% elif t.status == 'Completed' %}status-completed
-        {% elif t.status == 'Archived' %}status-archived
-        {% endif %}">{{ t.status }}</span>
-      <strong>{{ t.title }}</strong>
-      <span class="muted">by {{ t.name }} — {{ t.created_at[:10] }} — {{ t.reply_count }} repl{{ 'y' if t.reply_count == 1 else 'ies' }}</span>
-      <a href="/thread/{{ t.id }}">[View]</a>
-    </div>
+<h3>Existing Threads ({{ threads|length }})</h3>
+{% for t in threads %}
+<div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+    <h4>
+        {% if t.pinned %}📌{% endif %}
+        {% if t.locked %}🔒{% endif %}
+        [{{ t.status }}] {{ t.title }}
+    </h4>
+    <p>by {{ t.name }} — {{ t.created_at[:10] }} — {{ t.reply_count }} repl{{ 'y' if t.reply_count == 1 else 'ies' }}</p>
+    
+    <a href="{{ url_for('thread', thread_id=t.id) }}">View Thread</a>
 
-    <details style="margin-top:6px;">
-      <summary class="muted" style="cursor:pointer;">Edit</summary>
-      <form method="post" action="/admin/threads/{{ t.id }}/edit" class="admin-form">
+    <hr>
+    
+    <h4>Edit Thread</h4>
+    <form action="{{ url_for('edit_thread', thread_id=t.id) }}" method="POST">
         <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-        <div class="form-row">
-          <label>Title: <input type="text" name="title" value="{{ t.title }}" maxlength="100" required size="40"></label>
-        </div>
-        <div class="form-row">
-          <label>Status:
+        
+        <label>Title: 
+            <input type="text" name="title" value="{{ t.title }}" required maxlength="100" style="width: 100%; max-width: 400px;">
+        </label><br><br>
+        
+        <label>Status: 
             <select name="status">
-              <option value="Active" {% if t.status == 'Active' %}selected{% endif %}>Active</option>
-              <option value="In progress" {% if t.status == 'In progress' %}selected{% endif %}>In progress</option>
-              <option value="Completed" {% if t.status == 'Completed' %}selected{% endif %}>Completed</option>
-              <option value="Archived" {% if t.status == 'Archived' %}selected{% endif %}>Archived</option>
+                <option value="Active" {% if t.status == 'Active' %}selected{% endif %}>Active</option>
+                <option value="In progress" {% if t.status == 'In progress' %}selected{% endif %}>In progress</option>
+                <option value="Completed" {% if t.status == 'Completed' %}selected{% endif %}>Completed</option>
+                <option value="Archived" {% if t.status == 'Archived' %}selected{% endif %}>Archived</option>
             </select>
-          </label>
-          <label><input type="checkbox" name="pinned" {% if t.pinned %}checked{% endif %}> Pinned</label>
-          <label><input type="checkbox" name="locked" {% if t.locked %}checked{% endif %}> Locked</label>
-        </div>
-        <div class="form-row">
-          <textarea name="body" maxlength="5000">{{ t.body }}</textarea>
-        </div>
-        <div class="form-row">
-          <button type="submit" class="btn btn-sm">Save Changes</button>
-        </div>
-      </form>
-    </details>
-
-    <form method="post" action="/admin/threads/{{ t.id }}/delete" class="admin-form" style="margin-top:4px;">
-      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-      <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete thread: {{ t.title }}?')">Delete Thread</button>
+        </label><br><br>
+        
+        <label>
+            <input type="checkbox" name="pinned" {% if t.pinned %}checked{% endif %}> Pinned
+        </label>
+        <label style="margin-left: 15px;">
+            <input type="checkbox" name="locked" {% if t.locked %}checked{% endif %}> Locked
+        </label><br><br>
+        
+        <label>Body: <br>
+            <textarea name="body" rows="6" cols="60" required maxlength="5000" style="width: 100%; max-width: 600px;">{{ t.body }}</textarea>
+        </label><br><br>
+        
+        <button type="submit">Save Changes</button>
     </form>
-  </div>
-  {% else %}
-    <p class="muted">No threads on this board yet.</p>
-  {% endfor %}
+
+    <hr>
+    
+    <h4>Delete Thread</h4>
+    <form action="{{ url_for('delete_thread', thread_id=t.id) }}" method="POST" onsubmit="return confirm('Are you sure? This will permanently delete the thread and all its posts.');">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <button type="submit" style="color: red; font-weight: bold;">Delete Thread</button>
+    </form>
 </div>
+{% else %}
+<p>No threads on this board yet.</p>
+{% endfor %}
+
 {% endblock %}
