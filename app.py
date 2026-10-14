@@ -149,6 +149,10 @@ def init_db():
     db = get_db()
     with open(os.path.join(app.root_path, "schema.sql")) as f:
         db.executescript(f.read())
+    # Upgrade an older database: add the OP-badge column if it is missing
+    cols = [r["name"] for r in db.execute("PRAGMA table_info(posts)")]
+    if "is_admin" not in cols:
+        db.execute("ALTER TABLE posts ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
     db.commit()
     click.echo("Database ready.")
 
@@ -355,8 +359,8 @@ def reply(thread_id):
         abort(400)
         
     cur = db.execute(
-        "INSERT INTO posts (thread_id, name, body, image_filename) VALUES (?, ?, ?, ?)",
-        (thread_id, name, body, image_filename),
+        "INSERT INTO posts (thread_id, name, body, image_filename, is_admin) VALUES (?, ?, ?, ?, ?)",
+        (thread_id, name, body, image_filename, 1 if session.get("admin") else 0),
     )
     db.execute(
         "UPDATE threads SET last_activity_at = CURRENT_TIMESTAMP WHERE id = ?",

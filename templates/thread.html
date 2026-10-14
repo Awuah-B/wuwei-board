@@ -60,6 +60,7 @@
   {% endif %}
   <div class="post-info">
     <span class="post-name">{{ post.name }}</span>
+    {% if post.is_admin %}<span class="op-badge" title="Posted by the thread author">OP</span>{% endif %}
     <span class="post-date">{{ post.created_at[:19] }} UTC</span>
     <span class="post-num"><a href="#p{{ post.id }}" onclick="insertQuote({{ post.id }})">No.{{ post.id }}</a></span>
     {% if session.get('admin') %}
