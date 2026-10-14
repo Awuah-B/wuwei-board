@@ -322,7 +322,7 @@ hr {
 .reply-form-row {
   display: table-row;
 }
-.reply-form-row td {
+.reply-form-row > div {
   display: table-cell;
   padding: 2px;
   vertical-align: top;
@@ -359,7 +359,7 @@ hr {
 .reply-form-submit {
   display: table-row;
 }
-.reply-form-submit td {
+.reply-form-submit > div {
   display: table-cell;
   padding: 4px 2px;
 }

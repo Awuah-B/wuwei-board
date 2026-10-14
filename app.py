@@ -13,7 +13,7 @@ import bcrypt
 import click
 from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
 from markupsafe import Markup, escape
-from PIL import Image
+from PIL import Image, ImageOps
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -26,6 +26,7 @@ UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 THUMB_FOLDER = os.path.join(app.root_path, "static", "thumbs")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 MAX_CONTENT_LENGTH = 4 * 1024 * 1024  # 4 MB
+MAX_PIXELS = 25_000_000  # about 5000 x 5000
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 app.config["DONATION_BTC_ADDRESS"] = "bc1qg8m4slzxzafqvxwvuq3n42u7wrzdwpctpz4za0"
 def ensure_dirs():
@@ -50,14 +51,20 @@ def save_upload(file_storage):
     ext = file_storage.filename.rsplit(".", 1)[1].lower()
     fname = secrets.token_hex(8) + "." + ext
     
+    filepath = None
     try:
         # 1. Validate by opening with PIL (rejects unreadable/malformed files)
         img = Image.open(file_storage)
+        # Reject huge images before any pixels are decoded (a tiny file can expand to GBs of RAM)
+        if img.width * img.height > MAX_PIXELS:
+            return None
         img.verify()
         
         # 2. Re-open because verify() consumes the stream
         file_storage.seek(0)
         img = Image.open(file_storage)
+        # Metadata is stripped on save, so apply EXIF rotation first or phone photos end up sideways
+        img = ImageOps.exif_transpose(img)
         
         # 3. Convert to RGB to strip alpha channels/metadata issues and standardize
         if img.mode in ("RGBA", "P", "LA"):
@@ -77,6 +84,8 @@ def save_upload(file_storage):
     except Exception as e:
         # Reject anything unreadable or invalid
         print(f"Image validation/save failed: {e}")
+        if filepath and os.path.exists(filepath):
+            os.remove(filepath)  # do not leave an orphan if the thumbnail failed
         return None
         
     return fname
@@ -122,9 +131,10 @@ DUMMY_HASH = bcrypt.hashpw(b"dummy", bcrypt.gensalt())
 def get_db():
     """Open one database connection per request and reuse it."""
     if "db" not in g:
-        g.db = sqlite3.connect(DATABASE)
+        g.db = sqlite3.connect(DATABASE, timeout=10)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
+        g.db.execute("PRAGMA journal_mode = WAL")
     return g.db
 
 @app.teardown_appcontext
@@ -186,7 +196,6 @@ app.jinja_env.filters["format_post"] = format_post
 def add_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
@@ -195,6 +204,14 @@ def add_security_headers(response):
         "script-src 'self' 'unsafe-inline';"
     )
     return response
+
+@app.errorhandler(413)
+def too_large(error):
+    return "That upload is too large (4 MB maximum). Go back and try a smaller image.", 413
+
+@app.errorhandler(429)
+def too_many(error):
+    return "Too many requests. Please wait a minute and try again.", 429
 
 def csrf_token():
     if "csrf" not in session:
@@ -220,25 +237,30 @@ def admin_required(view):
         return view(*args, **kwargs)
     return wrapped
 
-# ---------- Rate Limiting (Dependency-Free) ----------
-_upload_rate_limit = defaultdict(list)
-_rate_limit_lock = threading.Lock()
+# ---------- Rate limiting (dependency-free, per worker) ----------
+_hits = defaultdict(list)
+_hits_lock = threading.Lock()
 
-def rate_limit_uploads(max_requests=5, window_seconds=60):
+def rate_limit(max_requests=5, window_seconds=60, methods=("POST",)):
+    """Allow max_requests per window per IP on one route. Stack two for a minute + daily cap."""
     def decorator(f):
         @functools.wraps(f)
         def wrapped(*args, **kwargs):
-            ip = request.headers.get("X-Forwarded-For", request.remote_addr)
-            if ip:
-                ip = ip.split(",")[0].strip()
-            
+            if request.method not in methods:
+                return f(*args, **kwargs)
+            # ProxyFix already puts the real visitor IP in remote_addr
+            key = (f.__name__, request.remote_addr, window_seconds)
             now = time.time()
-            with _rate_limit_lock:
-                # Clean old entries
-                _upload_rate_limit[ip] = [t for t in _upload_rate_limit[ip] if now - t < window_seconds]
-                if len(_upload_rate_limit[ip]) >= max_requests:
-                    abort(429, "Rate limit exceeded. Please wait before uploading again.")
-                _upload_rate_limit[ip].append(now)
+            with _hits_lock:
+                recent = [t for t in _hits[key] if now - t < window_seconds]
+                if len(recent) >= max_requests:
+                    _hits[key] = recent
+                    abort(429)
+                recent.append(now)
+                _hits[key] = recent
+                if len(_hits) > 10000:  # stop unbounded growth
+                    for k in [k for k, v in _hits.items() if not v or now - v[-1] > 3600]:
+                        del _hits[k]
             return f(*args, **kwargs)
         return wrapped
     return decorator
@@ -302,7 +324,8 @@ def thread(thread_id):
     return render_template("thread.html", thread=thread, posts=posts)
 
 @app.route("/thread/<int:thread_id>/reply", methods=["POST"])
-@rate_limit_uploads(max_requests=5, window_seconds=60)
+@rate_limit(5, 60)
+@rate_limit(60, 86400)
 def reply(thread_id):
     db = get_db()
     thread = db.execute(
@@ -344,6 +367,8 @@ def reply(thread_id):
 
 # ---------- Admin: login ----------
 @app.route("/admin/login", methods=["GET", "POST"])
+@rate_limit(5, 60)
+@rate_limit(30, 3600)
 def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
@@ -464,8 +489,8 @@ def admin_threads(board_id):
     return render_template("admin_threads.html", board=board, threads=threads)
 
 @app.route("/admin/threads", methods=["POST"])
-@rate_limit_uploads(max_requests=5, window_seconds=60)
 @admin_required
+@rate_limit(10, 60)
 def create_thread():
     board_id = request.form.get("board_id", type=int)
     if not board_id:

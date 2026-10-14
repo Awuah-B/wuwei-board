@@ -16,8 +16,7 @@
   </div>
   <a href="{{ url_for('static', filename='uploads/' + thread.image_filename) }}" target="_blank">
     <img src="{{ url_for('static', filename='thumbs/' + thumb_filename(thread.image_filename)) }}"
-         class="post-thumb" alt="OP image"
-         onclick="event.preventDefault(); this.classList.toggle('expanded');">
+         class="post-thumb" alt="OP image">
   </a>
   {% endif %}
   <div class="post-info">
@@ -56,8 +55,7 @@
   </div>
   <a href="{{ url_for('static', filename='uploads/' + post.image_filename) }}" target="_blank">
     <img src="{{ url_for('static', filename='thumbs/' + thumb_filename(post.image_filename)) }}"
-         class="post-thumb" alt="reply image"
-         onclick="event.preventDefault(); this.classList.toggle('expanded');">
+         class="post-thumb" alt="reply image">
   </a>
   {% endif %}
   <div class="post-info">
@@ -89,20 +87,20 @@
   <div class="reply-form-container">
     <form method="post" action="/thread/{{ thread.id }}/reply" enctype="multipart/form-data" class="reply-form">
       <div class="reply-form-row">
-        <td class="reply-form-label">Name</td>
-        <td class="reply-form-field"><input type="text" name="name" maxlength="30" placeholder="Anonymous"></td>
+        <div class="reply-form-label">Name</div>
+        <div class="reply-form-field"><input type="text" name="name" maxlength="30" placeholder="Anonymous"></div>
       </div>
       <div class="reply-form-row">
-        <td class="reply-form-label">Comment</td>
-        <td class="reply-form-field"><textarea name="body" id="reply-body" maxlength="2000" placeholder="Your comment..."></textarea></td>
+        <div class="reply-form-label">Comment</div>
+        <div class="reply-form-field"><textarea name="body" id="reply-body" maxlength="2000" placeholder="Your comment..."></textarea></div>
       </div>
       <div class="reply-form-row">
-        <td class="reply-form-label">File</td>
-        <td class="reply-form-field"><input type="file" name="file" accept="image/*"></td>
+        <div class="reply-form-label">File</div>
+        <div class="reply-form-field"><input type="file" name="file" accept="image/*"></div>
       </div>
       <div class="reply-form-submit">
-        <td></td>
-        <td><button type="submit" class="btn">Post Reply</button></td>
+        <div></div>
+        <div><button type="submit" class="btn">Post Reply</button></div>
       </div>
     </form>
   </div>
@@ -122,15 +120,11 @@ function insertQuote(id) {
 
 // Click thumbnail to expand/collapse
 document.querySelectorAll('.post-thumb').forEach(function(img) {
+  img.dataset.thumb = img.src;
   img.addEventListener('click', function(e) {
     e.preventDefault();
-    if (this.classList.contains('expanded')) {
-      this.classList.remove('expanded');
-      this.src = this.closest('a').querySelector('img').dataset.thumb || this.src;
-    } else {
-      this.classList.add('expanded');
-      this.src = this.closest('a').href;
-    }
+    var open = this.classList.toggle('expanded');
+    this.src = open ? this.closest('a').href : this.dataset.thumb;
   });
 });
 </script>

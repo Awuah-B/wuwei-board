@@ -36,3 +36,6 @@ CREATE TABLE IF NOT EXISTS admin (
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_posts_thread ON posts(thread_id);
+CREATE INDEX IF NOT EXISTS idx_threads_board ON threads(board_id, pinned, last_activity_at);
